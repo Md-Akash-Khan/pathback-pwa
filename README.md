@@ -20,4 +20,4 @@ This app is designed as a fun but useful indoor path memory tool. It does not tr
 Add your deployed Vercel link here:
 
 ```text
-https://your-project-name.vercel.app
+[https://your-project-name.vercel.app](https://pathback-pwa-md-akash-khan-s-projects.vercel.app/)
