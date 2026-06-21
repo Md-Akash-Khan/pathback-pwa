@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0e1726" />
+    <meta name="description" content="PathBack is a privacy-first indoor breadcrumb tracker that helps you retrace your own path." />
+    <title>PathBack | Indoor Breadcrumb Tracker</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="icons/icon-192.svg" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Personal indoor path recorder</p>
+          <h1>PathBack</h1>
+        </div>
+        <div class="status-row" aria-live="polite">
+          <span id="gpsStatus" class="status-pill muted">GPS idle</span>
+          <span id="sensorStatus" class="status-pill muted">Sensors idle</span>
+          <span id="modeStatus" class="status-pill">Ready</span>
+        </div>
+      </header>
+
+      <section class="hero-card">
+        <div>
+          <h2>Start at an entrance. Walk. Follow the breadcrumb back.</h2>
+          <p>
+            Designed for malls, campuses, markets, fairs, and confusing indoor places where normal maps do not show your exact walking path.
+          </p>
+        </div>
+        <button id="installBtn" class="ghost hidden">Install App</button>
+      </section>
+
+      <nav class="tabs" aria-label="Main sections">
+        <button class="tab active" data-tab="track">Track</button>
+        <button class="tab" data-tab="return">Return</button>
+        <button class="tab" data-tab="sessions">Sessions</button>
+        <button class="tab" data-tab="checkpoints">Checkpoints</button>
+        <button class="tab" data-tab="settings">Settings</button>
+      </nav>
+
+      <main>
+        <section id="track" class="panel active">
+          <div class="grid-two">
+            <div class="map-card">
+              <div class="map-toolbar">
+                <div>
+                  <strong id="floorLabel">Floor: Ground</strong>
+                  <small id="pathSummary">0 steps • 0.0 m • 0 points</small>
+                </div>
+                <div class="toolbar-actions">
+                  <button id="zoomOutBtn" class="icon-btn" title="Zoom out">−</button>
+                  <button id="zoomInBtn" class="icon-btn" title="Zoom in">+</button>
+                  <button id="centerBtn" class="icon-btn" title="Center map">⌖</button>
+                </div>
+              </div>
+              <canvas id="pathCanvas" width="1000" height="720" aria-label="Path drawing canvas"></canvas>
+            </div>
+
+            <aside class="control-card">
+              <h3>Journey controls</h3>
+              <div class="button-grid">
+                <button id="requestPermissionBtn" class="primary">Enable sensors</button>
+                <button id="startBtn" class="success">Start journey</button>
+                <button id="pauseBtn" class="warning">Pause</button>
+                <button id="stopBtn" class="danger">Stop & save</button>
+                <button id="resetBtn" class="ghost">Reset current</button>
+                <button id="calibrateBtn" class="ghost">Calibrate heading</button>
+              </div>
+
+              <div class="stats-grid">
+                <div><span id="stepsStat">0</span><small>Steps</small></div>
+                <div><span id="distanceStat">0.0 m</span><small>Distance</small></div>
+                <div><span id="headingStat">0°</span><small>Heading</small></div>
+                <div><span id="durationStat">00:00</span><small>Duration</small></div>
+              </div>
+
+              <label class="field">
+                <span>Floor</span>
+                <div class="floor-picker">
+                  <button id="floorMinusBtn" class="icon-btn" type="button" title="Previous floor">−</button>
+                  <input id="floorInput" list="floorOptions" placeholder="Ground" autocomplete="off" />
+                  <button id="floorPlusBtn" class="icon-btn" type="button" title="Next floor">+</button>
+                </div>
+                <datalist id="floorOptions"></datalist>
+              </label>
+              <div id="floorChips" class="floor-chips" aria-label="Saved floors"></div>
+              <div class="split-actions">
+                <button id="setMapBtn" class="ghost">Set floor map</button>
+                <input id="mapUpload" type="file" accept="image/*" hidden />
+              </div>
+
+              <div class="notice">
+                Keep your phone roughly facing your walking direction for better heading. Indoor tracking will drift, so checkpoints help correct the path.
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section id="return" class="panel">
+          <div class="grid-two">
+            <div class="map-card">
+              <div class="map-toolbar">
+                <div>
+                  <strong>Return mode</strong>
+                  <small id="returnSummary">No active return path</small>
+                </div>
+                <button id="startReturnBtn" class="primary">Return to start</button>
+              </div>
+              <canvas id="returnCanvas" width="1000" height="720" aria-label="Return path canvas"></canvas>
+            </div>
+
+            <aside class="control-card">
+              <h3>Guidance</h3>
+              <div class="compass-card">
+                <div id="compassNeedle" class="needle">➤</div>
+                <strong id="guidanceTitle">Start a saved or current path</strong>
+                <p id="guidanceText">When return mode starts, follow the highlighted breadcrumb points back to your starting position.</p>
+              </div>
+              <div class="button-grid">
+                <button id="prevTargetBtn" class="ghost">Previous point</button>
+                <button id="nextTargetBtn" class="ghost">Next point</button>
+                <button id="stopReturnBtn" class="danger">Stop return</button>
+              </div>
+              <div class="notice">
+                Return guidance is based on your recorded path. It is not a legal/safety navigation system. Use your own awareness in crowded places.
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section id="sessions" class="panel">
+          <div class="section-head">
+            <div>
+              <h3>Saved sessions</h3>
+              <p>Your journeys are stored locally in this browser only.</p>
+            </div>
+            <div class="split-actions">
+              <button id="exportBtn" class="ghost">Export JSON</button>
+              <button id="importBtn" class="ghost">Import JSON</button>
+              <input id="importFile" type="file" accept="application/json" hidden />
+            </div>
+          </div>
+          <div id="sessionsList" class="list"></div>
+        </section>
+
+        <section id="checkpoints" class="panel">
+          <div class="grid-two">
+            <div class="control-card">
+              <h3>Checkpoint correction</h3>
+              <p>
+                Add known points like Main Entrance, Lift, Food Court, Gate 1, or Parking Exit. When tracking drifts, apply a checkpoint to correct the current position.
+              </p>
+              <label class="field">
+                <span>Checkpoint name</span>
+                <input id="checkpointName" placeholder="Example: Jamuna main entrance" />
+              </label>
+              <div class="button-grid">
+                <button id="addCheckpointBtn" class="primary">Save current point</button>
+                <button id="applyCheckpointBtn" class="success">Apply selected</button>
+                <button id="scanCheckpointBtn" class="ghost">Scan QR/checkpoint</button>
+                <button id="manualCheckpointBtn" class="ghost">Paste code</button>
+              </div>
+              <video id="scannerVideo" class="scanner hidden" playsinline muted></video>
+              <div id="checkpointCodeBox" class="code-box hidden"></div>
+            </div>
+
+            <div class="control-card">
+              <h3>Saved checkpoints</h3>
+              <div id="checkpointList" class="list compact"></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="settings" class="panel">
+          <div class="grid-two">
+            <div class="control-card">
+              <h3>Tracking settings</h3>
+              <p class="settings-intro">Simple app-level controls only. Step timing and stride estimation are handled automatically in the background.</p>
+
+              <label class="field">
+                <span>Tracking response</span>
+                <select id="trackingProfileInput">
+                  <option value="responsive">Responsive</option>
+                  <option value="balanced">Balanced</option>
+                  <option value="stable">Stable</option>
+                </select>
+              </label>
+
+              <label class="field">
+                <span>Path view</span>
+                <select id="viewModeInput">
+                  <option value="fit">Auto-fit full route</option>
+                  <option value="follow">Follow current position</option>
+                </select>
+              </label>
+
+              <label class="field">
+                <span>Direction correction</span>
+                <select id="headingModeInput">
+                  <option value="normal">Normal</option>
+                  <option value="mirrored">Mirror left/right</option>
+                </select>
+              </label>
+
+              <label class="field">
+                <span>Map detail</span>
+                <select id="mapDetailInput">
+                  <option value="detailed">Detailed 2.5D grid</option>
+                  <option value="clean">Clean focus mode</option>
+                </select>
+              </label>
+
+              <button id="saveSettingsBtn" class="success">Save settings</button>
+            </div>
+
+            <div class="control-card">
+              <h3>App tools</h3>
+              <div class="button-grid">
+                <button id="demoBtn" class="ghost">Load demo path</button>
+                <button id="resetCalibrationBtn" class="ghost">Reset calibration</button>
+                <button id="clearMapsBtn" class="ghost">Clear floor maps</button>
+                <button id="clearAllBtn" class="danger">Clear all local data</button>
+              </div>
+              <div class="notice">
+                Journeys, checkpoints, and floor maps stay in this browser only. Use export/import if you want to move your data to another device.
+              </div>
+              <div class="compatibility">
+                <h4>Sensor health</h4>
+                <p id="compatText">Checking browser support...</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script src="app.js"></script>
+  </body>
+</html>
